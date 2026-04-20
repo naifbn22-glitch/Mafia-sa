@@ -526,35 +526,30 @@
             if (G.lastNightTarget) {
               html += `<div class="text-xs opacity-50 text-center mt-2">⚠️ لا يمكن اختيار <strong>${G.lastNightTarget}</strong> لأنه اختير الليلة الماضية</div>`;
             }
-          } else if (ph.action === 'choose-king') {
-            if (G.kingCheck) {
-              const kp = G.players.find(p => p.name === G.kingCheck);
-              const kr = ROLES[kp.role];
-              html += `<div class="p-4 rounded-xl text-center" style="background:rgba(212,168,40,.1);border:2px solid var(--gold)">
-                <div class="text-4xl mb-2" style="color:var(--gold)">✓</div>
-                <div class="font-bold mb-2">تم الاختيار</div>
-                <div class="text-lg font-bold mb-3" style="color:var(--gold)">${G.kingCheck}</div>
-                <div class="p-3 rounded-lg mt-3" style="background:${kr.bg};border:1px solid ${kr.border}">
-                  <div class="text-3xl mb-1">${kr.emoji}</div>
-                  <div class="font-black text-sm" style="color:${kr.border}">${kr.name}</div>
-                </div>
-                <button class="btn-gold w-full mt-4" onclick="renderNightPhase(${step + 1})">تأكيد ←</button>
-              </div>`;
-            } else {
-              html += '<div class="grid grid-cols-2 gap-2 mb-4">';
-              ph.targets.forEach((t, idx) => {
-                if (!kingAlive) {
-                  html += `<button class="btn-outline text-sm opacity-40 cursor-not-allowed" disabled><span class="opacity-60">${idx+1}.</span> ${t.name}</button>`;
-                } else {
-                  html += `<button class="btn-outline text-sm" onclick="selectKingCheck('${t.name}', ${step})"><span class="opacity-60">${idx+1}.</span> ${t.name}</button>`;
-                }
-              });
-              html += '</div>';
-              if (!kingAlive) {
-                html += `<button class="btn-gold mt-3" onclick="renderNightPhase(${step + 1})">تأكيد ←</button>`;
-              }
-            }
-          } else if (ph.action === 'choose-joker') {
+           else if (ph.action === 'choose-king') {
+  if (G.kingCheck) {
+    const kp = G.players.find(p => p.name === G.kingCheck);
+    const kr = ROLES[kp.role];
+    html += `
+      <div class="p-4 rounded-xl text-center" style="background:rgba(212,168,40,.1);border:2px solid var(--gold)">
+        <div class="text-4xl mb-2" style="color:var(--gold)">✓</div>
+        <div class="font-bold mb-2">تم الاختيار</div>
+        <div class="text-lg font-bold mb-3" style="color:var(--gold)">${G.kingCheck}</div>
+        <div class="p-3 rounded-lg mt-3" style="background:${kr.bg};border:1px solid ${kr.border}">
+          <div class="text-3xl mb-1">${kr.emoji}</div>
+          <div class="font-black text-sm" style="color:${kr.border}">${kr.name}</div>
+        </div>
+        <button class="btn-gold w-full mt-4" onclick="renderNightPhase(${step + 1})">تأكيد ←</button>
+      </div>
+    `;
+  } else {
+    html += '<div class="grid grid-cols-2 gap-2 mb-4">';
+    ph.targets.forEach((t, idx) => {
+      html += `<button class="btn-outline text-sm" onclick="selectKingCheck('${t.name}', ${step})"><span class="opacity-60">${idx+1}.</span> ${t.name}</button>`;
+    });
+    html += '</div>';
+  }
+}{
             if (!jokerAlive || !G.jokerEnabled) {
               html += `<div class="p-4 rounded-xl text-center opacity-40" style="background:rgba(255,107,53,.1);border:2px solid #ff6b35"><div class="text-3xl mb-2">🪦</div><div class="font-bold">الجوكر ميت</div><div class="text-sm opacity-60 mt-2">لا يمكنك الاختيار</div></div>`;
             } else {

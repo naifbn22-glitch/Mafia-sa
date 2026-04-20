@@ -49,6 +49,9 @@
 <body class="h-full overflow-auto bg-pattern">
   <div id="app" class="h-full w-full">
     <div id="page-home" class="page active fade-in">
+      <div class="absolute top-4 left-4 z-50 flex items-center gap-2">
+        <button id="music-toggle-btn" class="btn-outline button-press text-sm px-4 py-2" onclick="toggleMusic()">🔊 الموسيقى</button>
+      </div>
       <div class="absolute top-4 right-4 text-center">
         <div class="text-sm font-bold glow" style="color:var(--gold)">نايف الكثيري</div>
         <div class="text-xs opacity-60" style="color:var(--gold)">تصميم</div>
@@ -72,7 +75,7 @@
           <div class="bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-4 border border-gray-700 text-center card-hover"><div class="text-4xl mb-2">🧔</div><div class="font-bold text-sm role-badge" style="color:#4a90d4">المواطن</div></div>
         </div>
 
-        <button class="btn-gold text-lg pulse-glow" onclick="goTo('page-setup')">🎮 بدء لعبة جديدة</button>
+        <button class="btn-gold text-lg pulse-glow" onclick="startHomeMusic(); goTo('page-setup')">🎮 بدء لعبة جديدة</button>
 
         <div class="mt-12 max-w-lg mx-auto text-center opacity-60 text-sm leading-relaxed">
           <h3 class="font-bold mb-2" style="color:var(--gold)">كيف تُلعب المافيا؟</h3>
@@ -268,6 +271,16 @@
       const page = document.getElementById(id);
       page.classList.add('active', 'fade-in');
       window.scrollTo(0, 0);
+
+      if (id === 'page-home') {
+        startHomeMusic();
+        stopNightCrickets();
+      } else if (id === 'page-night') {
+        stopHomeMusic();
+        startNightCrickets();
+      } else {
+        stopNightCrickets();
+      }
     }
 
     function adjustRole(type, delta) {
@@ -397,8 +410,18 @@
     }
 
     function flipCard() {
+      const card = document.getElementById('card-inner');
+      card.classList.add('card-reveal');
+      card.animate([
+        { transform: 'scale(1) rotateY(0deg)', filter: 'brightness(1)' },
+        { transform: 'scale(1.08) rotateY(0deg)', filter: 'brightness(1.35)' },
+        { transform: 'scale(1.02) rotateY(180deg)', filter: 'brightness(1.15)' },
+        { transform: 'scale(1) rotateY(180deg)', filter: 'brightness(1)' }
+      ], {
+        duration: 950,
+        easing: 'cubic-bezier(.22,1,.36,1)'
+      });
       document.getElementById('card-inner').classList.add('flipped');
-      document.getElementById('card-inner').classList.add('card-reveal');
       document.getElementById('btn-flip').classList.add('hidden');
       document.getElementById('btn-hide').classList.remove('hidden');
       playSound('flip');
@@ -427,6 +450,7 @@
       G.nurseHeal = null;
       goTo('page-night');
       document.getElementById('round-number').textContent = `الجولة ${G.round}`;
+      startNightCrickets();
       renderNightPhase(0);
     }
 
@@ -522,7 +546,11 @@
             }
           } else if (ph.action === 'choose-nurse') {
             if (!nurseAlive) {
-              html += `<div class="p-4 rounded-xl text-center opacity-40" style="background:rgba(45,212,168,.1);border:2px solid #2dd4a8"><div class="text-3xl mb-2">🪦</div><div class="font-bold">الممرضة ميتة</div><div class="text-sm opacity-60 mt-2">لا يمكنك الاختيار</div></div>`;
+              html += '<div class="grid grid-cols-2 gap-2 mb-4">';
+              ph.targets.forEach((t, idx) => {
+                html += `<button class="btn-outline text-sm opacity-40 cursor-not-allowed" disabled><span class="opacity-60">${idx + 1}.</span> ${t.name}</button>`;
+              });
+              html += '</div>';
             } else {
               html += '<div class="grid grid-cols-2 gap-2 mb-4">';
               ph.targets.forEach((t, idx) => {
@@ -807,6 +835,10 @@
 
     let timerInterval = null;
     let timeRemaining = 180;
+    let homeMusicAudio = null;
+    let nightCricketsAudio = null;
+    let audioUnlocked = false;
+    let musicEnabled = localStorage.getItem('musicEnabled') !== 'false';
 
     function startDiscussionTimer() {
       timeRemaining = 180;
@@ -815,6 +847,9 @@
       timerInterval = setInterval(() => {
         timeRemaining--;
         updateTimerDisplay();
+        if (timeRemaining <= 10 && timeRemaining > 0) {
+          playSound('tick');
+        }
         if (timeRemaining <= 0) {
           clearInterval(timerInterval);
           showTimeUpModal();
@@ -834,6 +869,16 @@
         const circumference = 339.29;
         const offset = circumference * (1 - timeRemaining / 180);
         circle.style.strokeDashoffset = offset;
+        if (timeRemaining > 90) {
+          circle.style.stroke = '#2dd4a8';
+        } else if (timeRemaining > 30) {
+          circle.style.stroke = '#f0d060';
+        } else {
+          circle.style.stroke = '#ff6b6b';
+        }
+      }
+      if (timerText) {
+        timerText.style.color = timeRemaining > 90 ? '#2dd4a8' : (timeRemaining > 30 ? '#f0d060' : '#ff6b6b');
       }
     }
 
@@ -910,6 +955,125 @@
       setTimeout(() => t.remove(), 3000);
     }
 
+    function ensureAudioUnlocked() {
+      if (audioUnlocked) return;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        gain.gain.value = 0.0001;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.01);
+        audioUnlocked = true;
+      } catch (e) {}
+    }
+
+    function makeLoopingAmbient(type) {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const master = ctx.createGain();
+      master.connect(ctx.destination);
+      master.gain.value = 0.03;
+      let intervalId = null;
+
+      if (type === 'home') {
+        intervalId = setInterval(() => {
+          const now = ctx.currentTime;
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc1.type = 'triangle';
+          osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(220, now);
+          osc2.frequency.setValueAtTime(330, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.04, now + 0.15);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(master);
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + 1.8);
+          osc2.stop(now + 1.8);
+        }, 1800);
+      } else if (type === 'night') {
+        intervalId = setInterval(() => {
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(4200 + Math.random() * 800, now);
+          gain.gain.setValueAtTime(0.0001, now);
+          gain.gain.exponentialRampToValueAtTime(0.015, now + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(now);
+          osc.stop(now + 0.12);
+        }, 700);
+      }
+
+      return {
+        ctx,
+        stop() {
+          if (intervalId) clearInterval(intervalId);
+          try { master.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + 0.15); } catch (e) {}
+          setTimeout(() => { try { ctx.close(); } catch (e) {} }, 250);
+        }
+      };
+    }
+
+    function updateMusicButton() {
+      const btn = document.getElementById('music-toggle-btn');
+      if (!btn) return;
+      btn.textContent = musicEnabled ? '🔊 الموسيقى' : '🔇 الموسيقى';
+    }
+
+    function toggleMusic() {
+      musicEnabled = !musicEnabled;
+      localStorage.setItem('musicEnabled', String(musicEnabled));
+      updateMusicButton();
+      ensureAudioUnlocked();
+      if (!musicEnabled) {
+        stopHomeMusic();
+        stopNightCrickets();
+      } else {
+        const activePage = document.querySelector('.page.active')?.id;
+        if (activePage === 'page-home') startHomeMusic();
+        if (activePage === 'page-night') startNightCrickets();
+      }
+    }
+
+    function startHomeMusic() {
+      ensureAudioUnlocked();
+      if (!musicEnabled || homeMusicAudio) return;
+      homeMusicAudio = makeLoopingAmbient('home');
+      updateMusicButton();
+    }
+
+    function stopHomeMusic() {
+      if (homeMusicAudio) {
+        homeMusicAudio.stop();
+        homeMusicAudio = null;
+      }
+    }
+
+    function startNightCrickets() {
+      ensureAudioUnlocked();
+      if (!musicEnabled || nightCricketsAudio) return;
+      nightCricketsAudio = makeLoopingAmbient('night');
+      updateMusicButton();
+    }
+
+    function stopNightCrickets() {
+      if (nightCricketsAudio) {
+        nightCricketsAudio.stop();
+        nightCricketsAudio = null;
+      }
+    }
+
     function playSound(type) {
       const soundEnabled = localStorage.getItem('soundEnabled') !== 'false';
       if (!soundEnabled) return;
@@ -919,12 +1083,12 @@
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
         osc.connect(gain); gain.connect(audioContext.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(760, now + 0.16);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.16);
+        osc.start(now); osc.stop(now + 0.16);
       } else if (type === 'result') {
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
@@ -935,6 +1099,15 @@
         gain.gain.setValueAtTime(0.1, now);
         gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
         osc.start(now); osc.stop(now + 0.15);
+      } else if (type === 'tick') {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.connect(gain); gain.connect(audioContext.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1100, now);
+        gain.gain.setValueAtTime(0.05, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+        osc.start(now); osc.stop(now + 0.05);
       } else if (type === 'win') {
         const notes = [{freq:523,time:.2},{freq:659,time:.2},{freq:784,time:.3}];
         let noteTime = now;
@@ -952,6 +1125,8 @@
       }
     }
 
+    updateMusicButton();
+    document.addEventListener('click', ensureAudioUnlocked, { once: true });
     lucide.createIcons();
   </script>
 </body>

@@ -662,7 +662,9 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
     }
 
     function resolveNight() {
-      playDayAmbient();
+      if (typeof playDayAmbient === 'function') {
+  playDayAmbient();
+}
       let resultHtml = '';
       const saved = G.nightTarget && G.nurseHeal && G.nightTarget === G.nurseHeal;
 

@@ -433,6 +433,7 @@ function nextPhase(currentStep) {
     }
 
     function startNight() {
+      playNightAmbient();
       G.round++;
       G.nightTarget = null;
       G.kingCheck = null;
@@ -641,6 +642,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
     }
 
     function resolveNight() {
+      playDayAmbient();
       let resultHtml = '';
       const saved = G.nightTarget && G.nurseHeal && G.nightTarget === G.nurseHeal;
 
@@ -896,6 +898,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
     }
 
     function showWinner(team) {
+      stopAmbientSound();
       goTo('page-winner');
       clearInterval(timerInterval);
       playSound('win');
@@ -923,6 +926,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
     }
 
     function resetGame() {
+      stopAmbientSound();
       clearInterval(timerInterval);
       G = {thieves:2,citizens:3,jokerEnabled:false,players:[],assignments:[],revealIndex:0,round:0,nightTarget:null,kingCheck:null,jokerCheck:null,nurseHeal:null,votes:{},voterIndex:0,currentVoterVotes:{},lastNightTarget:null,lastNurseHeal:null};
       document.getElementById('thieves-count').textContent = '2';

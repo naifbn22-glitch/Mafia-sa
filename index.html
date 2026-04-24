@@ -8,6 +8,24 @@
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    .card-entrance {
+  animation: cardEntrance 1s cubic-bezier(.34,1.56,.64,1);
+}
+
+@keyframes cardEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(.4) rotate(-18deg) translateY(60px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.08) rotate(6deg) translateY(-12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0) translateY(0);
+  }
+}
     *{font-family:'Noto Kufi Arabic',sans-serif;box-sizing:border-box}
     html,body{height:100%;margin:0;padding:0}
     :root{--bg:#0a0a0f;--gold:#d4a828;--gold-light:#f0d060;--red:#8b1a1a;--gray:#1a1a24;--gray2:#2a2a3a;--white:#f0ece0}
@@ -394,6 +412,9 @@ function nextPhase(currentStep) {
       document.getElementById('reveal-player-name').textContent = `🎭 ${p.name}`;
       document.getElementById('reveal-instruction').textContent = `سلّم الجهاز إلى: ${p.name}`;
       const inner = document.getElementById('card-inner');
+      inner.classList.remove('card-entrance');
+void inner.offsetWidth;
+inner.classList.add('card-entrance');
       inner.classList.remove('flipped');
       const r = ROLES[p.role];
       document.getElementById('card-front').style.background = r.bg;

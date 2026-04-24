@@ -280,7 +280,9 @@
 
   window.scrollTo(0, 0);
 }
-
+function nextPhase(currentStep) {
+  renderNightPhase(currentStep + 1);
+}
     function adjustRole(type, delta) {
       if (type === 'thieves') {
         G.thieves = Math.max(1, G.thieves + delta);
@@ -520,7 +522,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
   <div class="text-sm opacity-60 mt-2">لا يمكنه الاختيار</div>
 
   <button class="btn-gold w-full mt-4" 
-    onclick="renderNightPhase(${step + 1})">
+    onclick="nextPhase(${step})">
     تجاوز ←
   </button>
 </div>`;
@@ -550,7 +552,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
   <div class="text-sm opacity-60 mt-2">لا يمكنه الاختيار</div>
 
   <button class="btn-gold w-full mt-4" 
-    onclick="renderNightPhase(${step + 1})">
+    onclick="nextPhase(${step})">
     تجاوز ←
   </button>
 </div>`;

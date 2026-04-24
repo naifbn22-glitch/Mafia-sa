@@ -433,7 +433,9 @@ function nextPhase(currentStep) {
     }
 
     function startNight() {
-      playNightAmbient();
+      if (typeof playNightAmbient === 'function') {
+  playNightAmbient();
+}
       G.round++;
       G.nightTarget = null;
       G.kingCheck = null;

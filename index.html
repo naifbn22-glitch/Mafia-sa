@@ -243,7 +243,17 @@
         <button id="btn-after-vote" class="btn-gold mt-8 text-lg" onclick="afterVote()">المتابعة ←</button>
       </div>
     </div>
+<div id="page-stats" class="page">
+  <div class="flex flex-col items-center min-h-full px-4 py-8">
+    <h2 class="text-3xl font-black glow mb-6" style="color:var(--gold)">📊 إحصائيات اللعبة</h2>
 
+    <div id="stats-content" class="w-full max-w-md space-y-3"></div>
+
+    <button class="btn-gold mt-8 text-lg" onclick="goTo('page-winner')">
+      عرض الفائز ←
+    </button>
+  </div>
+</div>
     <div id="page-winner" class="page">
       <div class="flex flex-col items-center justify-center min-h-full px-4 py-8 text-center">
         <div id="winner-content" class="winner-anim"></div>
@@ -271,6 +281,10 @@
       currentVoterVotes: {},
       lastNightTarget: null,
       lastNurseHeal: null
+      stats: {},
+eliminatedRound: {},
+kingFoundThief: {},
+nurseSavedCitizen: {}
     };
 
     const ROLES = {
@@ -833,6 +847,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
       if (!tie && maxVotes >= majority && accused) {
         const player = G.players.find(p => p.name === accused);
         player.alive = false;
+        G.eliminatedRound[player.name] = G.round;
         const r = ROLES[player.role];
         
         document.getElementById('vote-result-content').innerHTML = `
@@ -905,16 +920,69 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
       if (modal) modal.classList.add('hidden');
       clearInterval(timerInterval);
     }
+function calculateStats(winnerTeam) {
+  G.players.forEach(p => {
+    let points = 0;
+    const eliminatedRound = G.eliminatedRound[p.name];
+    const survived = p.alive;
 
+    if (p.role === 'thief') {
+      if (winnerTeam === 'thieves' && survived) points += 5;
+      else if (eliminatedRound && eliminatedRound <= 2) points += 0;
+      else if (eliminatedRound && eliminatedRound > 2) points += 3;
+    }
+
+    if (p.role !== 'thief') {
+      if (winnerTeam === 'citizens' && survived) points += 5;
+      else if (eliminatedRound && eliminatedRound <= 2) points += 0;
+      else if (eliminatedRound && eliminatedRound > 2) points += 3;
+    }
+
+    if (p.role === 'king' && G.kingFoundThief[p.name]) points += 2;
+    if (p.role === 'nurse' && G.nurseSavedCitizen[p.name]) points += 2;
+
+    G.stats[p.name] = {
+      name: p.name,
+      role: ROLES[p.role].name,
+      emoji: ROLES[p.role].emoji,
+      alive: p.alive,
+      points
+    };
+  });
+}
+    function showStats(winnerTeam) {
+  calculateStats(winnerTeam);
+
+  const box = document.getElementById('stats-content');
+  box.innerHTML = '';
+
+  Object.values(G.stats)
+    .sort((a, b) => b.points - a.points)
+    .forEach((s, i) => {
+      box.innerHTML += `
+        <div class="p-4 rounded-xl flex justify-between items-center" style="background:var(--gray2);border:1px solid rgba(212,168,40,.25)">
+          <div>
+            <div class="font-bold">${i + 1}. ${s.emoji} ${s.name}</div>
+            <div class="text-sm opacity-60">${s.role} | ${s.alive ? 'حي' : 'ميت'}</div>
+          </div>
+          <div class="text-2xl font-black" style="color:var(--gold)">
+            ${s.points}
+          </div>
+        </div>
+      `;
+    });
+
+  goTo('page-stats');
+}
     function checkWin() {
       const aliveThieves = G.players.filter(p => p.alive && p.role === 'thief').length;
       const aliveOthers = G.players.filter(p => p.alive && p.role !== 'thief').length;
       if (aliveThieves === 0) {
-        showWinner('citizens');
+        showStats('citizens');
         return true;
       }
       if (aliveThieves >= aliveOthers) {
-        showWinner('thieves');
+        showStats('thieves');
         return true;
       }
       return false;

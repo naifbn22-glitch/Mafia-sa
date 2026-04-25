@@ -834,6 +834,7 @@ style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
         const player = G.players.find(p => p.name === accused);
         player.alive = false;
         const r = ROLES[player.role];
+        
         document.getElementById('vote-result-content').innerHTML = `
           <div class="p-6 rounded-2xl result-pop" style="background:rgba(139,26,26,.2);border:2px solid #8b1a1a">
             <div class="text-5xl mb-4">⚖️</div>
